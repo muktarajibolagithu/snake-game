@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snake Game</title>
+  <style>
+    body {
+      text-align: center;
+      background: black;
+      color: white;
+      font-family: Arial;
+    }
+    canvas {
+      background: #111;
+      border: 2px solid white;
+    }
+  </style>
+</head>
+<body>
+
+<h2>🐍 Blue Snake Game</h2>
+<p>Use Arrow Keys to Move</p>
+
+<select id="level">
+  <option value="100">Easy</option>
+  <option value="70">Medium</option>
+  <option value="40">Hard</option>
+</select>
+<button onclick="startGame()">Start Game</button>
+
+<br><br>
+<canvas id="game" width="600" height="400"></canvas>
+
+<!-- 🔊 Sound -->
+<audio id="eatSound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let box = 20;
+let snake, aiSnake, food, blocks, dx, dy, game;
+
+function startGame() {
+  clearInterval(game);
+
+  snake = [{x: 200, y: 200}];
+  aiSnake = [{x: 400, y: 200}];
+  food = randomPos();
+  dx = box;
+  dy = 0;
+
+  // 🧱 Blocks
+  blocks = [];
+  for (let i = 0; i < 15; i++) {
+    blocks.push(randomPos());
+  }
+
+  let speed = document.getElementById("level").value;
+  game = setInterval(draw, speed);
+}
+
+function randomPos() {
+  return {
+    x: Math.floor(Math.random()*30)*box,
+    y: Math.floor(Math.random()*20)*box
+  };
+}
+
+document.addEventListener("keydown", dir);
+
+function dir(e) {
+  if (e.key === "ArrowLeft" && dx === 0) { dx = -box; dy = 0; }
+  if (e.key === "ArrowRight" && dx === 0) { dx = box; dy = 0; }
+  if (e.key === "ArrowUp" && dy === 0) { dx = 0; dy = -box; }
+  if (e.key === "ArrowDown" && dy === 0) { dx = 0; dy = box; }
+}
+
+function draw() {
+  ctx.fillStyle = "#111";
+  ctx.fillRect(0,0,600,400);
+
+  // 🧱 Draw blocks
+  ctx.fillStyle = "gray";
+  blocks.forEach(b => ctx.fillRect(b.x, b.y, box, box));
+
+  // 🍎 Draw food
+  ctx.fillStyle = "white";
+  ctx.fillRect(food.x, food.y, box, box);
+
+  // 🔵 Player snake
+  ctx.fillStyle = "blue";
+  snake.forEach(s => ctx.fillRect(s.x, s.y, box, box));
+
+  // 🤖 AI snake
+  ctx.fillStyle = "red";
+  aiSnake.forEach(s => ctx.fillRect(s.x, s.y, box, box));
+
+  // Move player
+  let head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+  // AI movement (toward food)
+  let aiHead = {...aiSnake[0]};
+  if (aiHead.x < food.x) aiHead.x += box;
+  else if (aiHead.x > food.x) aiHead.x -= box;
+  else if (aiHead.y < food.y) aiHead.y += box;
+  else if (aiHead.y > food.y) aiHead.y -= box;
+
+  // ❌ Collision checks
+  if (
+    head.x < 0 || head.x >= 600 ||
+    head.y < 0 || head.y >= 400 ||
+    collision(head, snake) ||
+    collision(head, blocks) ||
+    collision(head, aiSnake)
+  ) {
+    clearInterval(game);
+    alert("Game Over!");
+    return;
+  }
+
+  // 🍎 Eat food (player)
+  if (head.x === food.x && head.y === food.y) {
+    food = randomPos();
+    document.getElementById("eatSound").play(); // 🔊 sound
+  } else {
+    snake.pop();
+  }
+
+  // 🤖 AI eats food
+  if (aiHead.x === food.x && aiHead.y === food.y) {
+    food = randomPos();
+  } else {
+    aiSnake.pop();
+  }
+
+  snake.unshift(head);
+  aiSnake.unshift(aiHead);
+}
+
+function collision(head, array) {
+  for (let i = 0; i < array.length; i++) {
+    if (head.x === array[i].x && head.y === array[i].y) {
+      return true;
+    }
+  }
+  return false;
+}
+</script>
+
+</body>
+</html>
